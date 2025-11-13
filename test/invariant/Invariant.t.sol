@@ -1,23 +1,24 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.20;
+
+pragma solidity ^0.8.20;
 
 import { Test } from "forge-std/Test.sol";
 import { StdInvariant } from "forge-std/StdInvariant.sol";
-import { Handler } from "./Handler.t.sol";
 import { ERC20Mock } from "test/mocks/ERC20Mock.sol";
-import { PoolFactory } from "src/PoolFactory.sol";
-import { TSwapPool } from "src/TSwapPool.sol";
+import { PoolFactory } from "../../src/PoolFactory.sol";
+import { TSwapPool } from "../../src/TSwapPool.sol";
+import { Handler } from "./Handler.t.sol";
 
 contract Invariant is StdInvariant, Test {
     ERC20Mock poolToken;
     ERC20Mock weth;
-    Handler handler;
 
     PoolFactory factory;
-    TSwapPool pool; //poolToken, weth
+    TSwapPool pool; // poolToken, weth
+    int256 public constant STARTING_X = 100e18;
+    int256 public constant STARTING_Y = 50e18;
 
-    int256 constant STARTING_X = 100e18; // starting ERC20/poolToken
-    int256 constant STARTING_Y = 50e18; // starting WETH
+    Handler handler;
 
     function setUp() public {
         poolToken = new ERC20Mock();
@@ -31,7 +32,7 @@ contract Invariant is StdInvariant, Test {
         poolToken.approve(address(pool), type(uint256).max);
         weth.approve(address(pool), type(uint256).max);
 
-        // Deposit into pool
+        // Deposit Into Pool
         pool.deposit(uint256(STARTING_Y), uint256(STARTING_Y), uint256(STARTING_X), uint64(block.timestamp));
 
         handler = new Handler(pool);
@@ -42,7 +43,11 @@ contract Invariant is StdInvariant, Test {
         targetContract(address(handler));
     }
 
-    function statefulFuzz_constantProductProductFormulaStaysTheSameY() public {
+    function statefulFuzz_constantProductFormulaStaysTheSameY() public {
         assertEq(handler.actualDeltaY(), handler.expectedDeltaY());
+    }
+
+    function statefulFuzz_constantProductFormulaStaysTheSameX() public {
+        assertEq(handler.actualDeltaX(), handler.expectedDeltaX());
     }
 }
